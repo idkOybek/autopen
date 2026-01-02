@@ -1,13 +1,14 @@
 """Scan model."""
 
 from datetime import datetime
-from typing import Optional
-
-from sqlalchemy import String, Integer, Text, DateTime, Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Optional, List
 import enum
 
-from backend.models.base import Base, TimestampMixin
+from sqlalchemy import String, Integer, Float, DateTime, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from backend.models.base import BaseModel
 
 
 class ScanStatus(str, enum.Enum):
@@ -15,52 +16,73 @@ class ScanStatus(str, enum.Enum):
 
     PENDING = "pending"
     RUNNING = "running"
+    PAUSED = "paused"
     COMPLETED = "completed"
     FAILED = "failed"
-    CANCELLED = "cancelled"
+    STOPPED = "stopped"
 
 
-class ScanType(str, enum.Enum):
-    """Scan type enum."""
-
-    FULL = "full"
-    QUICK = "quick"
-    CUSTOM = "custom"
-
-
-class Scan(Base, TimestampMixin):
+class Scan(BaseModel):
     """Scan model."""
 
     __tablename__ = "scans"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    target_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    scan_type: Mapped[ScanType] = mapped_column(SQLEnum(ScanType), nullable=False)
+    # Basic info
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[ScanStatus] = mapped_column(
         SQLEnum(ScanStatus),
         default=ScanStatus.PENDING,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
-    # Scan configuration
-    depth: Mapped[int] = mapped_column(Integer, default=3)
-    timeout: Mapped[int] = mapped_column(Integer, default=3600)
+    # Configuration
+    pipeline_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
-    # Results
-    total_findings: Mapped[int] = mapped_column(Integer, default=0)
-    critical_findings: Mapped[int] = mapped_column(Integer, default=0)
-    high_findings: Mapped[int] = mapped_column(Integer, default=0)
-    medium_findings: Mapped[int] = mapped_column(Integer, default=0)
-    low_findings: Mapped[int] = mapped_column(Integer, default=0)
-    info_findings: Mapped[int] = mapped_column(Integer, default=0)
+    # Timing
+    started_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
 
-    # Metadata
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Target statistics
+    total_targets: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    completed_targets: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    failed_targets: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    # Task tracking
-    celery_task_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    # Finding statistics
+    total_findings: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    critical_findings: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    high_findings: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    medium_findings: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    low_findings: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Risk assessment
+    risk_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # Error tracking
+    error_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Relationships
+    targets: Mapped[List["Target"]] = relationship(
+        "Target",
+        back_populates="scan",
+        cascade="all, delete-orphan"
+    )
+    findings: Mapped[List["Finding"]] = relationship(
+        "Finding",
+        back_populates="scan",
+        cascade="all, delete-orphan"
+    )
+    checkpoints: Mapped[List["Checkpoint"]] = relationship(
+        "Checkpoint",
+        back_populates="scan",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
-        return f"<Scan(id={self.id}, target_id={self.target_id}, status={self.status})>"
+        return f"<Scan(id={self.id}, name={self.name}, status={self.status})>"
