@@ -1,20 +1,19 @@
 """Scan schemas."""
 
+import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pydantic import BaseModel, Field
 
-from backend.models.scan import ScanStatus, ScanType
+from backend.models.scan import ScanStatus
 
 
 class ScanBase(BaseModel):
     """Base scan schema."""
 
-    target_id: int
-    scan_type: ScanType = ScanType.FULL
-    depth: int = Field(default=3, ge=1, le=10)
-    timeout: int = Field(default=3600, ge=60, le=7200)
+    name: str = Field(..., min_length=1, max_length=255)
+    pipeline_config: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ScanCreate(ScanBase):
@@ -26,31 +25,38 @@ class ScanCreate(ScanBase):
 class ScanUpdate(BaseModel):
     """Schema for updating a scan."""
 
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
     status: Optional[ScanStatus] = None
-    error_message: Optional[str] = None
+    pipeline_config: Optional[Dict[str, Any]] = None
+    total_targets: Optional[int] = None
+    completed_targets: Optional[int] = None
+    failed_targets: Optional[int] = None
     total_findings: Optional[int] = None
     critical_findings: Optional[int] = None
     high_findings: Optional[int] = None
     medium_findings: Optional[int] = None
     low_findings: Optional[int] = None
-    info_findings: Optional[int] = None
+    risk_score: Optional[float] = None
+    error_count: Optional[int] = None
 
 
 class ScanResponse(ScanBase):
     """Schema for scan response."""
 
-    id: int
+    id: uuid.UUID
     status: ScanStatus
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    total_targets: int
+    completed_targets: int
+    failed_targets: int
     total_findings: int
     critical_findings: int
     high_findings: int
     medium_findings: int
     low_findings: int
-    info_findings: int
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    error_message: Optional[str] = None
-    celery_task_id: Optional[str] = None
+    risk_score: Optional[float] = None
+    error_count: int
     created_at: datetime
     updated_at: datetime
 
