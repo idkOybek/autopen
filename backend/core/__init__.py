@@ -9,6 +9,8 @@ from backend.core.error_handler import (
     RecoveryAction,
 )
 from backend.core.state_manager import StateManager
+from backend.core.scanner_manager import ScannerManager, scanner_manager
+from backend.core.parallel_executor import ParallelExecutor
 
 __all__ = [
     "TargetClassifier",
@@ -19,4 +21,7 @@ __all__ = [
     "ErrorCategory",
     "RecoveryAction",
     "StateManager",
+    "ScannerManager",
+    "scanner_manager",
+    "ParallelExecutor",
 ]
