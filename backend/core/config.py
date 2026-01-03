@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     # FTP Configuration
     FTP_HOST: str = ""
     FTP_PORT: int = 21
-    FTP_USER: str = ""
+    FTP_USERNAME: str = ""
     FTP_PASSWORD: str = ""
     FTP_REPORTS_DIR: str = "/reports"
 

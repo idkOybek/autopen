@@ -11,6 +11,8 @@ from backend.core.error_handler import (
 from backend.core.state_manager import StateManager
 from backend.core.scanner_manager import ScannerManager, scanner_manager
 from backend.core.parallel_executor import ParallelExecutor
+from backend.core.orchestrator import ScanOrchestrator, orchestrator
+from backend.core.recovery import RecoveryManager, recovery_manager
 
 __all__ = [
     "TargetClassifier",
@@ -24,4 +26,8 @@ __all__ = [
     "ScannerManager",
     "scanner_manager",
     "ParallelExecutor",
+    "ScanOrchestrator",
+    "orchestrator",
+    "RecoveryManager",
+    "recovery_manager",
 ]
