@@ -45,6 +45,9 @@ loguru>=0.7.0
 # HTTP client
 httpx>=0.25.0
 
+# System monitoring
+psutil>=5.9.0
+
 # Development
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
