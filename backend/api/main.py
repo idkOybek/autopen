@@ -5,6 +5,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from loguru import logger
 
 from backend.api.routes import health, scans, targets, blacklist, reports
@@ -20,6 +21,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info(f"Starting {settings.APP_NAME} v{settings.VERSION}")
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info(f"Database URL: {settings.async_database_url.split('@')[1]}")
+
+    # Auto-recover interrupted scans
+    try:
+        from backend.core.recovery import recovery_manager
+        recovered_scans = await recovery_manager.recover_interrupted_scans()
+        if recovered_scans:
+            logger.info(f"Recovered {len(recovered_scans)} interrupted scans")
+    except Exception as e:
+        logger.error(f"Failed to recover interrupted scans: {e}")
 
     yield
 
@@ -46,6 +56,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configure GZip compression
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Include routers
 app.include_router(
