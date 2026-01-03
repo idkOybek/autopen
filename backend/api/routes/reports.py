@@ -17,6 +17,7 @@ from backend.api.schemas.report import (
 )
 from backend.core.database import get_db
 from backend.models.scan import Scan
+from backend.reports.report_coordinator import ReportCoordinator
 
 router = APIRouter()
 
@@ -26,7 +27,11 @@ async def get_technical_report(
     scan_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get technical report for a scan."""
+    """
+    Get technical report for a scan.
+
+    Returns PDF file with detailed technical findings.
+    """
     try:
         scan = await db.get(Scan, scan_id)
         if not scan:
@@ -34,9 +39,14 @@ async def get_technical_report(
 
         logger.info(f"Generating technical report for scan {scan_id}")
 
-        raise HTTPException(
-            status_code=501,
-            detail="Report generation not implemented yet"
+        # Generate report
+        coordinator = ReportCoordinator(db)
+        report_path = await coordinator.generate_technical_report(str(scan_id))
+
+        return FileResponse(
+            path=report_path,
+            media_type="application/pdf",
+            filename=f"{scan.name}_technical.pdf",
         )
 
     except HTTPException:
@@ -51,7 +61,11 @@ async def get_executive_report(
     scan_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    """Get executive summary report for a scan."""
+    """
+    Get executive summary report for a scan.
+
+    Returns PDF file with high-level executive summary.
+    """
     try:
         scan = await db.get(Scan, scan_id)
         if not scan:
@@ -59,9 +73,14 @@ async def get_executive_report(
 
         logger.info(f"Generating executive report for scan {scan_id}")
 
-        raise HTTPException(
-            status_code=501,
-            detail="Report generation not implemented yet"
+        # Generate report
+        coordinator = ReportCoordinator(db)
+        report_path = await coordinator.generate_executive_report(str(scan_id))
+
+        return FileResponse(
+            path=report_path,
+            media_type="application/pdf",
+            filename=f"{scan.name}_executive.pdf",
         )
 
     except HTTPException:
